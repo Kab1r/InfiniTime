@@ -10,11 +10,11 @@ on:
 
   # Run this Workflow when files are updated (Pushed) in the "master" Branch
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
     
   # Also run this Workflow when a Pull Request is created or updated in the "master" Branch
   pull_request:
-    branches: [ master ]
+    branches: [ master, develop ]
 
 # Steps to run for the Workflow
 jobs:

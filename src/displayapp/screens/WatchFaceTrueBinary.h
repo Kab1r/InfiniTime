@@ -19,6 +19,37 @@ namespace Pinetime {
 
   namespace Applications {
     namespace Screens {
+      namespace Binary {
+        inline bool hasBin(uint8_t x, uint8_t bin) {
+          return (x & 0b1 << bin) >> bin;
+        }
+
+        class BinaryDot {
+        private:
+          lv_obj_t* obj;
+          static constexpr uint8_t SIZE = 26;
+          static constexpr uint8_t SPACE = SIZE / 4;
+          static constexpr uint8_t BORDER_WIDTH = SIZE / 7;
+
+        public:
+          BinaryDot();
+          void set(bool value);
+
+          void topRight();
+          void topLeft();
+          void bottomRight();
+          void bottomLeft();
+
+          void below(BinaryDot& ref);
+          void above(BinaryDot& ref);
+          void leftOf(BinaryDot& ref);
+          void rightOf(BinaryDot& ref);
+          void below(lv_obj_t* ref);
+          void above(lv_obj_t* ref);
+          void leftOf(lv_obj_t* ref);
+          void rightOf(lv_obj_t* ref);
+        };
+      }
 
       class WatchFaceTrueBinary : public Screen {
       public:
@@ -44,62 +75,32 @@ namespace Pinetime {
 
         DirtyValue<std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>> currentDateTime {};
 
-        lv_obj_t* label_day;
-        lv_obj_t* backgroundLabel;
+        lv_task_t* taskRefresh;
 
         // Binary Watch
         // Time
-#define CIRCLE_OUTLINE_WIDTH 4
-        static constexpr uint8_t LED_SIZE1 = 37;
-        static constexpr uint8_t LED_RING1 = 2;
-        static constexpr uint8_t LED_SPACE_H1 = (LED_SIZE1 / 12);
-        static constexpr uint8_t LED_SPACE_V1 = (LED_SIZE1 / 4);
-#define LED_COL_MIN_ON   lv_color_hex(0xDD0000)
-#define LED_COL_MIN_OFF  lv_color_hex(0x220000)
-#define LED_COL_HOUR_ON  lv_color_hex(0x00DD00)
-#define LED_COL_HOUR_OFF lv_color_hex(0x002200)
-#define LED_COL_RING     lv_color_hex(0x999999)
-        lv_obj_t* minTens1;
-        lv_obj_t* minTens2;
-        lv_obj_t* minTens4;
-        lv_obj_t* minOnes1;
-        lv_obj_t* minOnes2;
-        lv_obj_t* minOnes4;
-        lv_obj_t* minOnes8;
 
-        lv_obj_t* hour1;
-        lv_obj_t* hour2;
-        lv_obj_t* hour4;
-        lv_obj_t* hour8;
+        static constexpr uint8_t MINUTE_ONES = 4;
+        static constexpr uint8_t MINUTE_TENS = 3;
+        Binary::BinaryDot minuteOnes[MINUTE_ONES];
+        Binary::BinaryDot minuteTens[MINUTE_TENS];
 
-        lv_obj_t* amPm;
+        static constexpr uint8_t HOURS = 5;
+        Binary::BinaryDot hours[HOURS];
 
         // Date
-        static constexpr uint8_t LED_SIZE2 = 18;
-        static constexpr uint8_t LED_RING2 = 2;
-        static constexpr uint8_t LED_SPACE_H2 = (LED_SIZE2 / 6);
-        static constexpr uint8_t LED_SPACE_V2 = (LED_SIZE2 / 4);
-#define LED_COL_DAY_ON  lv_color_hex(0xCCCCCC)
-#define LED_COL_DAY_OFF lv_color_hex(0x222222)
-#define LED_COL_MON_ON  lv_color_hex(0xCCCCCC)
-#define LED_COL_MON_OFF lv_color_hex(0x222222)
-#define LED_COL_RING    lv_color_hex(0x999999)
-        lv_obj_t* dayOfWeek1;
-        lv_obj_t* dayOfWeek2;
-        lv_obj_t* dayOfWeek4;
+        static constexpr uint8_t DAYS_IN_WEEK = 3;
+        Binary::BinaryDot dayOfWeek[DAYS_IN_WEEK];
 
-        lv_obj_t* dayOfMonthTens1;
-        lv_obj_t* dayOfMonthTens2;
-        lv_obj_t* dayOfMonthOnes1;
-        lv_obj_t* dayOfMonthOnes2;
-        lv_obj_t* dayOfMonthOnes4;
-        lv_obj_t* dayOfMonthOnes8;
+        static constexpr uint8_t DAYS_IN_MONTH_ONES = 4;
+        static constexpr uint8_t DAYS_IN_MONTH_TENS = 2;
+        Binary::BinaryDot dayOfMonthOnes[DAYS_IN_MONTH_ONES];
+        Binary::BinaryDot dayOfMonthTens[DAYS_IN_MONTH_TENS];
 
-        lv_obj_t* monthOfYear1;
-        lv_obj_t* monthOfYear2;
-        lv_obj_t* monthOfYear4;
-        lv_obj_t* monthOfYear8;
+        static constexpr uint8_t MONTHS_IN_YEAR = 4;
+        Binary::BinaryDot monthOfYear[MONTHS_IN_YEAR];
 
+        // Controllers
         Controllers::DateTime& dateTimeController;
         Controllers::Battery& batteryController;
         Controllers::Ble& bleController;

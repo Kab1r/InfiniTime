@@ -14,6 +14,61 @@
 #include "components/settings/Settings.h"
 #include "../DisplayApp.h"
 
+using namespace Pinetime::Applications::Screens::Binary;
+
+BinaryDot::BinaryDot() {
+  obj = lv_obj_create(lv_scr_act(), nullptr);
+  lv_obj_set_size(obj, SIZE, SIZE);
+  lv_obj_set_style_local_radius(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
+  lv_obj_set_style_local_bg_color(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
+  lv_obj_set_style_local_bg_opa(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
+  lv_obj_set_style_local_border_width(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, BORDER_WIDTH);
+  lv_obj_set_style_local_border_color(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
+  lv_obj_set_style_local_border_opa(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_COVER);
+  lv_obj_set_style_local_border_side(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_BORDER_SIDE_FULL);
+  bottomRight(); // to find unexpected binary dots
+  set(false);
+}
+void BinaryDot::topRight() {
+  lv_obj_align(obj, lv_scr_act(), LV_ALIGN_IN_TOP_RIGHT, -SPACE, SPACE);
+}
+void BinaryDot::topLeft() {
+  lv_obj_align(obj, lv_scr_act(), LV_ALIGN_IN_TOP_LEFT, SPACE, SPACE);
+}
+void BinaryDot::bottomRight() {
+  lv_obj_align(obj, lv_scr_act(), LV_ALIGN_IN_BOTTOM_RIGHT, -SPACE, -SPACE);
+}
+void BinaryDot::bottomLeft() {
+  lv_obj_align(obj, lv_scr_act(), LV_ALIGN_IN_BOTTOM_LEFT, SPACE, -SPACE);
+}
+void BinaryDot::below(BinaryDot& ref) {
+  below(ref.obj);
+}
+void BinaryDot::above(BinaryDot& ref) {
+  above(ref.obj);
+}
+void BinaryDot::leftOf(BinaryDot& ref) {
+  leftOf(ref.obj);
+}
+void BinaryDot::rightOf(BinaryDot& ref) {
+  rightOf(ref.obj);
+}
+void BinaryDot::below(lv_obj_t* ref) {
+  lv_obj_align(obj, ref, LV_ALIGN_OUT_BOTTOM_MID, 0, SPACE);
+}
+void BinaryDot::above(lv_obj_t* ref) {
+  lv_obj_align(obj, ref, LV_ALIGN_OUT_TOP_MID, 0, -SPACE);
+}
+void BinaryDot::leftOf(lv_obj_t* ref) {
+  lv_obj_align(obj, ref, LV_ALIGN_OUT_LEFT_MID, -SPACE, 0);
+}
+void BinaryDot::rightOf(lv_obj_t* ref) {
+  lv_obj_align(obj, ref, LV_ALIGN_OUT_RIGHT_MID, SPACE, 0);
+}
+void BinaryDot::set(bool value) {
+  lv_obj_set_style_local_bg_opa(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, value ? LV_OPA_COVER : LV_OPA_TRANSP);
+}
+
 using namespace Pinetime::Applications::Screens;
 
 WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
@@ -24,8 +79,8 @@ WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
                                          Controllers::Settings& settingsController,
                                          Controllers::MotionController& motionController)
   : Screen(app),
-    currentDateTime {{}},
     dateTimeController {dateTimeController},
+    currentDateTime {{}},
     batteryController {batteryController},
     bleController {bleController},
     notificationManager {notificationManager},
@@ -34,49 +89,70 @@ WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
 
   settingsController.SetClockFace(3);
 
-  // minutes
-  minOnes8 = lv_obj_create(lv_scr_act(), nullptr);
-  lv_obj_set_style_local_bg_color(minOnes8, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_obj_set_style_local_bg_opa(minOnes8, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
-  lv_obj_set_style_local_radius(minOnes8, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
-  lv_obj_set_style_local_outline_width(minOnes8, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, CIRCLE_OUTLINE_WIDTH);
-  lv_obj_set_style_local_outline_color(minOnes8, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_obj_set_style_local_outline_pad(minOnes8, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, 0);
-  lv_obj_set_size(minOnes8, LED_SIZE1, LED_SIZE1);
-  lv_obj_align(minOnes8, lv_scr_act(), LV_ALIGN_IN_TOP_RIGHT, -LED_SIZE1, -LED_SIZE1);
+  // Minute
+  for (auto i = MINUTE_ONES - 1; i >= 0; i--) {
+    if (i == MINUTE_ONES - 1) {
+      minuteOnes[i].topRight();
+    } else {
+      minuteOnes[i].below(minuteOnes[i + 1]);
+    }
+  }
+  for (auto i = 0; i < MINUTE_TENS; i++) {
+    if (i == 0) {
+      minuteTens[i].leftOf(minuteOnes[i]);
+    } else {
+      minuteTens[i].above(minuteTens[i - 1]);
+    }
+  }
+  // Hours
+  for (auto i = 0; i < HOURS; i++) {
+    if (i == 0) {
+      hours[i].leftOf(minuteTens[i]);
+    } else if (i == HOURS - 1) {
+      // AM / PM / 24h bit
+      hours[i].leftOf(hours[i - 1]);
+    } else {
+      hours[i].above(hours[i - 1]);
+    }
+  }
+  // Day of Week
+  for (auto i = 0; i < DAYS_IN_WEEK; i++) {
+    if (i == 0) {
+      dayOfWeek[i].bottomLeft();
+    } else {
+      dayOfWeek[i].above(dayOfWeek[i - 1]);
+    }
+  }
+  // Day of Month
+  for (auto i = 0; i < DAYS_IN_MONTH_TENS; i++) {
+    if (i == 0) {
+      dayOfMonthTens[i].rightOf(dayOfWeek[i]);
+    } else {
+      dayOfMonthTens[i].above(dayOfMonthTens[i - 1]);
+    }
+  }
+  for (auto i = 0; i < DAYS_IN_MONTH_ONES; i++) {
+    if (i == 0) {
+      dayOfMonthOnes[i].rightOf(dayOfMonthTens[i]);
+    } else {
+      dayOfMonthOnes[i].above(dayOfMonthOnes[i - 1]);
+    }
+  }
+  // Month of Year
+  for (auto i = 0; i < MONTHS_IN_YEAR; i++) {
+    if (i == 0) {
+      monthOfYear[i].rightOf(dayOfMonthOnes[i]);
+    } else {
+      monthOfYear[i].above(monthOfYear[i - 1]);
+    }
+  }
 
-  minOnes4 = lv_obj_create(lv_scr_act(), nullptr);
-  lv_obj_set_style_local_bg_color(minOnes4, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_obj_set_style_local_bg_opa(minOnes4, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
-  lv_obj_set_style_local_radius(minOnes4, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
-  lv_obj_set_style_local_outline_width(minOnes4, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, CIRCLE_OUTLINE_WIDTH);
-  lv_obj_set_style_local_outline_color(minOnes4, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_obj_set_style_local_outline_pad(minOnes4, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, 0);
-  lv_obj_set_size(minOnes4, LED_SIZE1, LED_SIZE1);
-  lv_obj_align(minOnes4, minOnes8, LV_ALIGN_OUT_BOTTOM_MID, 0, -LED_SPACE_H1);
-
-  minOnes2 = lv_obj_create(lv_scr_act(), nullptr);
-  lv_obj_set_style_local_bg_color(minOnes2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_obj_set_style_local_bg_opa(minOnes2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
-  lv_obj_set_style_local_radius(minOnes2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
-  lv_obj_set_style_local_outline_width(minOnes2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, CIRCLE_OUTLINE_WIDTH);
-  lv_obj_set_style_local_outline_color(minOnes2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_obj_set_style_local_outline_pad(minOnes2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, 0);
-  lv_obj_set_size(minOnes2, LED_SIZE1, LED_SIZE1);
-  lv_obj_align(minOnes2, minOnes4, LV_ALIGN_OUT_BOTTOM_MID, 0, -LED_SPACE_H1);
-
-  minOnes1 = lv_obj_create(lv_scr_act(), nullptr);
-  lv_obj_set_style_local_bg_color(minOnes1, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_obj_set_style_local_bg_opa(minOnes1, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_TRANSP);
-  lv_obj_set_style_local_radius(minOnes1, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
-  lv_obj_set_style_local_outline_width(minOnes1, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, CIRCLE_OUTLINE_WIDTH);
-  lv_obj_set_style_local_outline_color(minOnes1, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_obj_set_style_local_outline_pad(minOnes1, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, 0);
-  lv_obj_set_size(minOnes1, LED_SIZE1, LED_SIZE1);
-  lv_obj_align(minOnes1, minOnes2, LV_ALIGN_OUT_BOTTOM_MID, 0, -LED_SPACE_H1);
+  taskRefresh = lv_task_create(RefreshTaskCallback, LV_DISP_DEF_REFR_PERIOD, LV_TASK_PRIO_MID, this);
+  Refresh();
 }
 
 WatchFaceTrueBinary::~WatchFaceTrueBinary() {
+  lv_task_del(taskRefresh);
   lv_obj_clean(lv_scr_act());
 }
 
@@ -98,31 +174,52 @@ void WatchFaceTrueBinary::Refresh() {
   uint8_t newHour = time.hours().count();
   uint8_t newMinute = time.minutes().count();
 
-  if (newMinute != currentMinute) {
-    currentMinute = newMinute;
-    if ((currentMinute & 0x0001) >> 0) {
-      lv_obj_set_style_local_bg_opa(minOnes1, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_COVER);
+  // Minutes
+  if (currentMinute != newMinute) {
+    uint8_t ones = (currentMinute = newMinute) % 10;
+    uint8_t tens = currentMinute / 10;
+
+    for (auto i = MINUTE_ONES - 1; i >= 0; i--) {
+      minuteOnes[i].set(hasBin(ones, i));
     }
-    if ((currentMinute & 0x0010) >> 1) {
-      lv_obj_set_style_local_bg_opa(minOnes2, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_COVER);
-    }
-    if ((currentMinute & 0x0100) >> 2) {
-      lv_obj_set_style_local_bg_opa(minOnes4, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_COVER);
-    }
-    if ((currentMinute & 0x1000) >> 3) {
-      lv_obj_set_style_local_bg_opa(minOnes8, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_COVER);
+    for (auto i = MINUTE_TENS - 1; i >= 0; i--) {
+      minuteTens[i].set(hasBin(tens, i));
     }
   }
-  if (newHour != currentHour) {
+  // Hours
+  if (currentHour != newHour) {
+    bool isPM = newHour >= 12 && settingsController.GetClockType() == Controllers::Settings::ClockType::H12;
+    currentHour = (newHour <= 0) ? 12 : (newHour - (isPM ? 12 : 0));
+
+    for (auto i = HOURS - 1; i >= 0; i--) {
+      hours[i].set(hasBin(currentHour, i) || (i == HOURS - 1 && isPM));
+    }
+
     currentHour = newHour;
   }
-  if (newDayOfWeek != currentDayOfWeek) {
+  // Day of Week
+  if (currentDayOfWeek != newDayOfWeek) {
     currentDayOfWeek = newDayOfWeek;
+    for (auto i = DAYS_IN_WEEK - 1; i >= 0; i--) {
+      dayOfWeek[i].set(hasBin(currentDayOfWeek, i));
+    }
   }
-  if (newDay != currentDay) {
-    currentDay = newDay;
+  // Day of Month
+  if (currentDay != newDay) {
+    uint8_t ones = (currentDay = newDay) % 10;
+    uint8_t tens = currentDay / 10;
+    for (auto i = DAYS_IN_MONTH_ONES - 1; i >= 0; i--) {
+      dayOfMonthOnes[i].set(hasBin(ones, i));
+    }
+    for (auto i = DAYS_IN_MONTH_TENS - 1; i >= 0; i--) {
+      dayOfMonthTens[i].set(hasBin(tens, i));
+    }
   }
-  if (newMonth != currentMonth) {
+  // Month of Year
+  if (currentMonth != newMonth) {
     currentMonth = newMonth;
+    for (auto i = MONTHS_IN_YEAR - 1; i >= 0; i--) {
+      monthOfYear[i].set(hasBin(currentMonth, i));
+    }
   }
 }

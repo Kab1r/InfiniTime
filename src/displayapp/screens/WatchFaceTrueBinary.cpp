@@ -209,4 +209,12 @@ void WatchFaceTrueBinary::Refresh() {
       monthOfYear[i].set(hasBin(currentMonth, i));
     }
   }
+
+  // Background
+  background = lv_obj_create(lv_scr_act(), nullptr);
+  lv_obj_set_style_local_bg_color(background, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, Convert(settingsController.GetPTSColorBG()));
+  lv_obj_set_style_local_radius(background, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, 0);
+  lv_obj_set_size(background, 240, 240);
+  lv_obj_align(background, lv_scr_act(), LV_ALIGN_IN_TOP_LEFT, 0, 0);
+  lv_obj_move_background(background);
 }

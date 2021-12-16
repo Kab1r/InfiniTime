@@ -68,6 +68,8 @@ namespace Pinetime {
 
         lv_task_t* taskRefresh;
 
+        lv_obj_t* background;
+
         // Binary Watch
         // Time
 

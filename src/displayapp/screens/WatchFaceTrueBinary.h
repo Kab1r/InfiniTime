@@ -11,10 +11,6 @@
 namespace Pinetime {
   namespace Controllers {
     class Settings;
-    class Battery;
-    class Ble;
-    class NotificationManager;
-    class MotionController;
   }
 
   namespace Applications {
@@ -34,6 +30,7 @@ namespace Pinetime {
         public:
           BinaryDot();
           void set(bool value);
+          void setColors(lv_color_t borderColor, lv_color_t dotColor);
 
           void topRight();
           void topLeft();
@@ -53,13 +50,7 @@ namespace Pinetime {
 
       class WatchFaceTrueBinary : public Screen {
       public:
-        WatchFaceTrueBinary(DisplayApp* app,
-                            Controllers::DateTime& dateTimeController,
-                            Controllers::Battery& batteryController,
-                            Controllers::Ble& bleController,
-                            Controllers::NotificationManager& notificationManager,
-                            Controllers::Settings& settingsController,
-                            Controllers::MotionController& motionController);
+        WatchFaceTrueBinary(DisplayApp* app, Controllers::DateTime& dateTimeController, Controllers::Settings& settingsController);
         ~WatchFaceTrueBinary() override;
 
         void Refresh() override;
@@ -102,11 +93,7 @@ namespace Pinetime {
 
         // Controllers
         Controllers::DateTime& dateTimeController;
-        Controllers::Battery& batteryController;
-        Controllers::Ble& bleController;
-        Controllers::NotificationManager& notificationManager;
         Controllers::Settings& settingsController;
-        Controllers::MotionController& motionController;
       };
     }
   }

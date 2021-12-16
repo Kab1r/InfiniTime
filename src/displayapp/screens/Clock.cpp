@@ -85,6 +85,5 @@ std::unique_ptr<Screen> Clock::PineTimeStyleScreen() {
 }
 
 std::unique_ptr<Screen> Clock::WatchFaceTrueBinaryScreen() {
-  return std::make_unique<Screens::WatchFaceTrueBinary>(
-    app, dateTimeController, batteryController, bleController, notificatioManager, settingsController, motionController);
+  return std::make_unique<Screens::WatchFaceTrueBinary>(app, dateTimeController, settingsController);
 }

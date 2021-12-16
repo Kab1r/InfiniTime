@@ -2,15 +2,8 @@
 
 #include <date/date.h>
 #include <lvgl/lvgl.h>
+#include <displayapp/Colors.h>
 #include <cstdio>
-#include "BatteryIcon.h"
-#include "BleIcon.h"
-#include "NotificationIcon.h"
-#include "Symbols.h"
-#include "components/battery/BatteryController.h"
-#include "components/ble/BleController.h"
-#include "components/ble/NotificationManager.h"
-#include "components/motion/MotionController.h"
 #include "components/settings/Settings.h"
 #include "../DisplayApp.h"
 
@@ -29,6 +22,14 @@ BinaryDot::BinaryDot() {
   bottomRight(); // to find unexpected binary dots
   set(false);
 }
+void BinaryDot::set(bool value) {
+  lv_obj_set_style_local_bg_opa(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, value ? LV_OPA_COVER : LV_OPA_TRANSP);
+}
+void BinaryDot::setColors(lv_color_t borderColor, lv_color_t dotColor) {
+  lv_obj_set_style_local_bg_color(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, dotColor);
+  lv_obj_set_style_local_border_color(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, borderColor);
+}
+
 void BinaryDot::topRight() {
   lv_obj_align(obj, lv_scr_act(), LV_ALIGN_IN_TOP_RIGHT, -SPACE, SPACE);
 }
@@ -65,32 +66,19 @@ void BinaryDot::leftOf(lv_obj_t* ref) {
 void BinaryDot::rightOf(lv_obj_t* ref) {
   lv_obj_align(obj, ref, LV_ALIGN_OUT_RIGHT_MID, SPACE, 0);
 }
-void BinaryDot::set(bool value) {
-  lv_obj_set_style_local_bg_opa(obj, LV_BTN_PART_MAIN, LV_STATE_DEFAULT, value ? LV_OPA_COVER : LV_OPA_TRANSP);
-}
 
 using namespace Pinetime::Applications::Screens;
 
 WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
                                          Controllers::DateTime& dateTimeController,
-                                         Controllers::Battery& batteryController,
-                                         Controllers::Ble& bleController,
-                                         Controllers::NotificationManager& notificationManager,
-                                         Controllers::Settings& settingsController,
-                                         Controllers::MotionController& motionController)
-  : Screen(app),
-    dateTimeController {dateTimeController},
-    currentDateTime {{}},
-    batteryController {batteryController},
-    bleController {bleController},
-    notificationManager {notificationManager},
-    settingsController {settingsController},
-    motionController {motionController} {
+                                         Controllers::Settings& settingsController)
+  : Screen(app), currentDateTime {{}}, dateTimeController {dateTimeController}, settingsController {settingsController} {
 
   settingsController.SetClockFace(3);
 
   // Minute
   for (auto i = MINUTE_ONES - 1; i >= 0; i--) {
+    minuteOnes[i].setColors(Convert(settingsController.GetPTSColorTime()), Convert(settingsController.GetPTSColorBar()));
     if (i == MINUTE_ONES - 1) {
       minuteOnes[i].topRight();
     } else {
@@ -98,6 +86,7 @@ WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
     }
   }
   for (auto i = 0; i < MINUTE_TENS; i++) {
+    minuteTens[i].setColors(Convert(settingsController.GetPTSColorTime()), Convert(settingsController.GetPTSColorBar()));
     if (i == 0) {
       minuteTens[i].leftOf(minuteOnes[i]);
     } else {
@@ -106,6 +95,7 @@ WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
   }
   // Hours
   for (auto i = 0; i < HOURS; i++) {
+    hours[i].setColors(Convert(settingsController.GetPTSColorTime()), Convert(settingsController.GetPTSColorBar()));
     if (i == 0) {
       hours[i].leftOf(minuteTens[i]);
     } else if (i == HOURS - 1) {
@@ -117,6 +107,7 @@ WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
   }
   // Day of Week
   for (auto i = 0; i < DAYS_IN_WEEK; i++) {
+    dayOfWeek[i].setColors(Convert(settingsController.GetPTSColorTime()), Convert(settingsController.GetPTSColorBar()));
     if (i == 0) {
       dayOfWeek[i].bottomLeft();
     } else {
@@ -125,6 +116,7 @@ WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
   }
   // Day of Month
   for (auto i = 0; i < DAYS_IN_MONTH_TENS; i++) {
+    dayOfMonthTens[i].setColors(Convert(settingsController.GetPTSColorTime()), Convert(settingsController.GetPTSColorBar()));
     if (i == 0) {
       dayOfMonthTens[i].rightOf(dayOfWeek[i]);
     } else {
@@ -132,6 +124,7 @@ WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
     }
   }
   for (auto i = 0; i < DAYS_IN_MONTH_ONES; i++) {
+    dayOfMonthOnes[i].setColors(Convert(settingsController.GetPTSColorTime()), Convert(settingsController.GetPTSColorBar()));
     if (i == 0) {
       dayOfMonthOnes[i].rightOf(dayOfMonthTens[i]);
     } else {
@@ -140,6 +133,7 @@ WatchFaceTrueBinary::WatchFaceTrueBinary(DisplayApp* app,
   }
   // Month of Year
   for (auto i = 0; i < MONTHS_IN_YEAR; i++) {
+    monthOfYear[i].setColors(Convert(settingsController.GetPTSColorTime()), Convert(settingsController.GetPTSColorBar()));
     if (i == 0) {
       monthOfYear[i].rightOf(dayOfMonthOnes[i]);
     } else {
@@ -161,24 +155,19 @@ void WatchFaceTrueBinary::Refresh() {
   if (!currentDateTime.IsUpdated()) {
     return;
   }
-
   auto newDateTime = currentDateTime.Get();
-
   auto dp = date::floor<date::days>(newDateTime);
   auto time = date::make_time(newDateTime - dp);
   auto yearMonthDay = date::year_month_day(dp);
-
   uint8_t newMonth = (unsigned) yearMonthDay.month();
   uint8_t newDay = (unsigned) yearMonthDay.day();
   uint8_t newDayOfWeek = date::weekday(yearMonthDay).iso_encoding();
   uint8_t newHour = time.hours().count();
   uint8_t newMinute = time.minutes().count();
-
   // Minutes
   if (currentMinute != newMinute) {
     uint8_t ones = (currentMinute = newMinute) % 10;
     uint8_t tens = currentMinute / 10;
-
     for (auto i = MINUTE_ONES - 1; i >= 0; i--) {
       minuteOnes[i].set(hasBin(ones, i));
     }
@@ -189,12 +178,10 @@ void WatchFaceTrueBinary::Refresh() {
   // Hours
   if (currentHour != newHour) {
     bool isPM = newHour >= 12 && settingsController.GetClockType() == Controllers::Settings::ClockType::H12;
-    currentHour = (newHour <= 0) ? 12 : (newHour - (isPM ? 12 : 0));
-
+    currentHour = newHour % 12 ? newHour - (isPM ? 12 : 0) : 12;
     for (auto i = HOURS - 1; i >= 0; i--) {
       hours[i].set(hasBin(currentHour, i) || (i == HOURS - 1 && isPM));
     }
-
     currentHour = newHour;
   }
   // Day of Week
